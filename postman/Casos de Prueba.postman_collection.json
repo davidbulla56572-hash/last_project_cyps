@@ -1,0 +1,1513 @@
+{
+  "info": {
+    "_postman_id": "e08ec5b9-a8ae-4382-b434-b05b04d3622b",
+    "name": "Casos de Prueba",
+    "description": "15 casos oficiales CP-001 a CP-015, más preparación, verificación y limpieza. Ejecutar con Collection Runner usando el entorno Grupo 3. Las pruebas CP-006 y CP-015 detectan comportamientos contrarios a los criterios funcionales propuestos; los defectos deben documentarse por separado. El flujo se encadena con pm.execution.setNextRequest. No son resultados ejecutados.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "58590824",
+    "_collection_link": "https://go.postman.co/collection/58590824-e08ec5b9-a8ae-4382-b434-b05b04d3622b?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "00 - Preparacion y autenticacion",
+      "item": [
+        {
+          "name": "INICIO - Registrar usuario temporal",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = Date.now() + '-' + Math.floor(Math.random() * 100000);\npm.environment.set('testEmail', 'grupo3-' + id + '@example.com');\npm.environment.set('testPassword', 'Prueba123!');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });\n\nconst data = pm.response.json();\n\npm.test('Respuesta JSON es objeto', function () { pm.expect(data).to.be.an('object'); });\n\npm.test('Token es texto', function () { pm.expect(data.token).to.be.a('string').and.not.empty; });\n\npm.environment.set('token', data.token);\n\npm.environment.set('userId', data.user._id);\n\npm.execution.setNextRequest(\"CP-001 - Caracteres especiales\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"QA\",\n  \"lastName\": \"DAVID\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Crea un usuario de prueba y guarda el token de acceso."
+          },
+          "response": []
+        }
+      ],
+      "description": "Peticiones organizadas por funcionalidad."
+    },
+    {
+      "name": "01 - Crear contactos",
+      "item": [
+        {
+          "name": "CP-001 - Caracteres especiales",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });\n\nconst data = pm.response.json();\n\npm.test('Respuesta JSON es objeto', function () {\n    pm.expect(data).to.be.an('object');\n});\n\npm.test('Tildes y tipos correctos', function () {\n    pm.expect(data.firstName).to.eql('María José');\n    pm.expect(data.lastName).to.eql('Muñoz Peña');\n    pm.expect(data._id).to.be.a('string');\n});\n\npm.execution.setNextRequest(\"CP-002 - Solo datos obligatorios\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"María José\",\n  \"lastName\": \"Muñoz Peña\",\n  \"birthdate\": \"1999-05-15\",\n  \"email\": \"maria-{{testEmail}}\",\n  \"phone\": \"3001234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-001: Crear contacto con tildes y caracteres especiales; validar que se conserven."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-002 - Solo datos obligatorios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Respuesta JSON es objeto', function () { pm.expect(data).to.be.an('object'); });",
+                  "pm.test('Se creó con datos mínimos', function () { pm.expect(data._id).to.be.a('string'); pm.expect(data.firstName).to.eql('Carlos'); });",
+                  "pm.execution.setNextRequest(\"PREP CP-003 - Crear contacto\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"GrupoTres\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-002: Crear contacto enviando solo nombre y apellido."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-004 - Contacto 1",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('cp004id1', '');",
+                  "pm.environment.set('cp004id2', '');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Respuesta JSON es objeto', function () { pm.expect(data).to.be.an('object'); });",
+                  "pm.test('ID 1 es texto', function () { pm.expect(data._id).to.be.a('string'); });",
+                  "pm.environment.set('cp004id1', data._id);",
+                  "pm.execution.setNextRequest(\"CP-004 - Contacto 2\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Unico1\",\n  \"lastName\": \"GrupoTres\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-004, paso 1: crear primer contacto y guardar su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-004 - Contacto 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Respuesta JSON es objeto', function () { pm.expect(data).to.be.an('object'); });",
+                  "pm.test('ID 2 diferente', function () { pm.expect(data._id).to.be.a('string'); pm.expect(data._id).not.to.eql(pm.environment.get('cp004id1')); });",
+                  "pm.environment.set('cp004id2', data._id);",
+                  "pm.execution.setNextRequest(\"CP-004 - Contacto 3\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Unico2\",\n  \"lastName\": \"GrupoTres\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-004, paso 2: crear segundo contacto y comparar su ID con el primero."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-004 - Contacto 3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Respuesta JSON es objeto', function () { pm.expect(data).to.be.an('object'); });",
+                  "pm.test('Los 3 identificadores son únicos', function () { pm.expect(data._id).to.be.a('string'); pm.expect(data._id).not.to.eql(pm.environment.get('cp004id1')); pm.expect(data._id).not.to.eql(pm.environment.get('cp004id2')); });",
+                  "pm.execution.setNextRequest(\"CP-005 - Primer teléfono\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Unico3\",\n  \"lastName\": \"GrupoTres\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-004, paso 3: crear tercer contacto y comprobar que los tres IDs sean distintos."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-005 - Primer teléfono",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () {\n    pm.response.to.have.status(201);\n});\n\nconst data = pm.response.json();\n\npm.test('Respuesta JSON es objeto', function () {\n    pm.expect(data).to.be.an('object');\n});\npm.environment.set('cp005id1', data._id);\n\npm.test('Teléfono guardado', function () {\n    pm.expect(data.phone).to.eql('3005551234');\n});\n\npm.execution.setNextRequest(\"CP-005 - Segundo teléfono\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Laura\",\n  \"lastName\": \"GrupoTres\",\n  \"phone\": \"3005551234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-005, paso 1: crear primer contacto con teléfono compartido."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-005 - Segundo teléfono",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () {\n    pm.response.to.have.status(201);\n});\nconst data = pm.response.json();\n\npm.test('Respuesta JSON es objeto', function () {\n    pm.expect(data).to.be.an('object');\n});\n\npm.test('Mismo teléfono y otro ID', function () {\n    pm.expect(data.phone).to.eql('3005551234');\n    pm.expect(data._id).to.be.a('string');\n    pm.expect(data._id).not.to.eql(pm.environment.get('cp005id1'));\n});\n\npm.execution.setNextRequest(\"CP-006 - Fecha futura\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Pedro\",\n  \"lastName\": \"GrupoTres\",\n  \"phone\": \"3005551234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-005, paso 2: crear otro contacto con el mismo teléfono y comprobar que ambos sean distintos."
+          },
+          "response": []
+        }
+      ],
+      "description": "Peticiones organizadas por funcionalidad."
+    },
+    {
+      "name": "02 - Actualizar contactos",
+      "item": [
+        {
+          "name": "PREP CP-003 - Crear contacto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () {\n    pm.response.to.have.status(201);\n});\n\nconst data = pm.response.json();\n\npm.test('Respuesta JSON es objeto', function () {\n    pm.expect(data).to.be.an('object');\n});\n\npm.environment.set('contactId', data._id);\n\npm.execution.setNextRequest(\"CP-003 - Modificar varios campos\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Original\",\n  \"lastName\": \"GrupoTres\",\n  \"city\": \"Pereira\",\n  \"phone\": \"3001111111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "Crea contacto base para CP-003 y guarda su identificador."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-003 - Modificar varios campos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Respuesta JSON es objeto', function () { pm.expect(data).to.be.an('object'); });",
+                  "pm.test('Tres cambios y apellido intacto', function () { pm.expect(data.firstName).to.eql('Andrés'); pm.expect(data.city).to.eql('Manizales'); pm.expect(data.phone).to.eql('3119876543'); pm.expect(data.lastName).to.eql('GrupoTres'); });",
+                  "pm.execution.setNextRequest(\"VER CP-003 - Consultar contacto\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Andrés\",\n  \"city\": \"Manizales\",\n  \"phone\": \"3119876543\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts/{{contactId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts",
+                "{{contactId}}"
+              ]
+            },
+            "description": "CP-003: Modificar nombre, ciudad y teléfono en un solo PATCH sin alterar el apellido."
+          },
+          "response": []
+        },
+        {
+          "name": "VER CP-003 - Consultar contacto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {\n    pm.response.to.have.status(200);\n});\n\nconst data = pm.response.json();\n\npm.test('Respuesta JSON es objeto', function () {\n    pm.expect(data).to.be.an('object');\n});\n\npm.test('Cambios guardados', function () {\n    pm.expect(data.city).to.eql('Manizales');\n    pm.expect(data.phone).to.eql('3119876543');\n});\n\npm.execution.setNextRequest(\"CP-004 - Contacto 1\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/{{contactId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts",
+                "{{contactId}}"
+              ]
+            },
+            "description": "Consulta el contacto para verificar que los cambios de CP-003 se guardaron."
+          },
+          "response": []
+        },
+        {
+          "name": "PREP CP-009 - Crear contacto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () {\n    pm.response.to.have.status(201);\n});\n\nconst data = pm.response.json();\n\npm.test('Respuesta JSON es objeto', function () {\n    pm.expect(data).to.be.an('object');\n});\n\npm.environment.set('contactId', data._id);\n\npm.environment.set('cp009idOriginal', data._id);\n\npm.execution.setNextRequest(\"CP-009 - Intentar cambiar ID\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"IdProtegido\",\n  \"lastName\": \"GrupoTres\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "Crea contacto para intentar cambiar su _id en CP-009."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-009 - Intentar cambiar ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La petición responde sin error de servidor', function () {\n    pm.expect(pm.response.code).to.be.below(500);\n});\n\npm.execution.setNextRequest(\"VER CP-009 - Confirmar ID\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"_id\": \"000000000000000000000001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts/{{contactId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts",
+                "{{contactId}}"
+              ]
+            },
+            "description": "CP-009: Intentar cambiar el identificador interno _id; la verificación definitiva se hace con GET."
+          },
+          "response": []
+        },
+        {
+          "name": "VER CP-009 - Confirmar ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {\n    pm.response.to.have.status(200);\n});\n\nconst data = pm.response.json();\n\npm.test('Respuesta JSON es objeto', function () {\n    pm.expect(data).to.be.an('object');\n});\n\npm.test('El ID interno no cambió', function () {\n    pm.expect(data._id).to.eql(pm.environment.get('cp009idOriginal'));\n});\n\npm.execution.setNextRequest(\"PREP CP-010 - Crear contacto\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/{{contactId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts",
+                "{{contactId}}"
+              ]
+            },
+            "description": "Verifica que el _id original no cambió tras CP-009."
+          },
+          "response": []
+        },
+        {
+          "name": "PREP CP-010 - Crear contacto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () {\n    pm.response.to.have.status(201);\n});\n\nconst data = pm.response.json();\n\npm.test('Respuesta JSON es objeto', function () {\n    pm.expect(data).to.be.an('object');\n});\n\npm.environment.set('contactId', data._id);\n\npm.environment.set('cp010ownerOriginal', data.owner);\n\npm.execution.setNextRequest(\"CP-010 - Intentar cambiar propietario\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"OwnerProtegido\",\n  \"lastName\": \"GrupoTres\",\n  \"city\": \"Manizales\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "Crea contacto y guarda su propietario original para CP-010."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-010 - Intentar cambiar propietario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La petición responde sin error de servidor', function () {\n    pm.expect(pm.response.code).to.be.below(500);\n});\n\npm.execution.setNextRequest(\"VER CP-010 - Confirmar propietario\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"OwnerProtegido\",\n  \"lastName\": \"GrupoTres\",\n  \"city\": \"Manizales\",\n  \"owner\": \"000000000000000000000001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts/{{contactId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts",
+                "{{contactId}}"
+              ]
+            },
+            "description": "CP-010: Intentar reemplazar el propietario owner; comprobar luego que se mantiene."
+          },
+          "response": []
+        },
+        {
+          "name": "VER CP-010 - Confirmar propietario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () {\n    pm.response.to.have.status(200);\n});\n\nconst data = pm.response.json();\n\npm.test('Respuesta JSON es objeto', function () {\n    pm.expect(data).to.be.an('object');\n});\n\npm.test('El propietario se mantiene', function () {\n    pm.expect(data.owner).to.eql(pm.environment.get('cp010ownerOriginal'));\n});\n\npm.execution.setNextRequest(\"CP-011 - Contenido text/plain\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/{{contactId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts",
+                "{{contactId}}"
+              ]
+            },
+            "description": "Consulta el contacto y confirma que el propietario no cambió."
+          },
+          "response": []
+        }
+      ],
+      "description": "Peticiones organizadas por funcionalidad."
+    },
+    {
+      "name": "03 - Validaciones negativas",
+      "item": [
+        {
+          "name": "CP-006 - Fecha futura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La API debe rechazar la fecha futura', function () {\n    pm.expect([400, 422]).to.include(pm.response.code);\n});\n\nif (pm.response.code === 201) {\n    pm.environment.set('cp006IdCreado', pm.response.json()._id);\n}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Futuro\",\n  \"lastName\": \"GrupoTres\",\n  \"birthdate\": \"2099-12-31\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-006: La fecha de nacimiento futura 2099-12-31 debe rechazarse. Si devuelve 201, el test falla y es evidencia de defecto funcional candidato."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-007 - Nombre demasiado largo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('longName', 'A'.repeat(1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "\npm.test(\"CP-007 - La API rechaza el nombre demasiado largo\", function () {\n    pm.response.to.have.status(400);\n});\n\nconst respuesta = pm.response.json();\n\npm.test(\"La respuesta es un objeto JSON\", function () {\n    pm.expect(respuesta).to.be.an(\"object\");\n});\n\npm.test(\"El error corresponde al campo firstName\", function () {\n    pm.expect(respuesta.errors).to.have.property(\"firstName\");\n});\n\npm.test(\"El error es por longitud máxima\", function () {\n    pm.expect(respuesta.errors.firstName.kind).to.equal(\"maxlength\");\n});\n\npm.test(\"La longitud máxima permitida es 20\", function () {\n    pm.expect(respuesta.errors.firstName.properties.maxlength).to.equal(20);\n});\n\npm.test(\"El mensaje indica un error de validación\", function () {\n    pm.expect(respuesta._message).to.equal(\"Contact validation failed\");\n});\n\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"{{longName}}\",\n  \"lastName\": \"GrupoTres\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-007: La API debe rechazar un nombre de 1000 caracteres."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-008 - Teléfono inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "\npm.test(\"CP-008 - La API rechaza el teléfono inválido\", function () {\n    pm.response.to.have.status(400);\n});\n\nconst respuesta = pm.response.json();\n\npm.test(\"La respuesta es un objeto JSON\", function () {\n    pm.expect(respuesta).to.be.an(\"object\");\n});\n\npm.test(\"El error corresponde al campo phone\", function () {\n    pm.expect(respuesta.errors).to.have.property(\"phone\");\n});\n\npm.test(\"El error es por longitud máxima\", function () {\n    pm.expect(respuesta.errors.phone.kind).to.equal(\"maxlength\");\n});\n\npm.test(\"La longitud máxima permitida es 15\", function () {\n    pm.expect(respuesta.errors.phone.properties.maxlength).to.equal(15);\n});\n\npm.test(\"El valor rechazado es el teléfono enviado\", function () {\n    pm.expect(respuesta.errors.phone.value).to.equal(\"no-es-un-telefono\");\n});\n\npm.test(\"El mensaje indica un error de validación\", function () {\n    pm.expect(respuesta._message).to.equal(\"Contact validation failed\");\n});\n\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Telefono\",\n  \"lastName\": \"GrupoTres\",\n  \"phone\": \"no-es-un-telefono\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-008: Rechazar un teléfono con letras y guiones no válidos."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-011 - Contenido text/plain",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "\npm.test(\"CP-011 - La API rechaza text/plain\", function () {\n    pm.expect([400, 415, 422]).to.include(pm.response.code);\n});\n\npm.test(\"La respuesta no es exitosa\", function () {\n    pm.expect(pm.response.code).to.be.at.least(400);\n    pm.expect(pm.response.code).to.be.below(500);\n});\n\npm.test(\"No se creó un contacto\", function () {\n    pm.expect(pm.response.code).not.to.equal(201);\n});\n\npm.test(\"La respuesta contiene información del rechazo\", function () {\n    const texto = pm.response.text();\n    pm.expect(texto.length).to.be.greaterThan(0);\n});\n\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "firstName=Texto&lastName=Plano",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-011: Intentar crear contacto con Content-Type text/plain y comprobar rechazo."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-012 - Email numérico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "\npm.test(\"CP-012 - La API rechaza el email numérico\", function () {\n    pm.response.to.have.status(400);\n});\n\nconst respuesta = pm.response.json();\n\npm.test(\"La respuesta es un objeto JSON\", function () {\n    pm.expect(respuesta).to.be.an(\"object\");\n});\n\npm.test(\"El error corresponde al campo email\", function () {\n    pm.expect(respuesta.errors).to.have.property(\"email\");\n});\n\npm.test(\"El mensaje indica que el email es inválido\", function () {\n    pm.expect(respuesta.errors.email.message).to.equal(\"Email is invalid\");\n});\n\npm.test(\"El valor rechazado es el enviado\", function () {\n    pm.expect(respuesta.errors.email.value).to.equal(\"123456789\");\n});\n\npm.test(\"El error corresponde a una validación personalizada\", function () {\n    pm.expect(respuesta.errors.email.kind).to.equal(\"user defined\");\n});\n\npm.test(\"El usuario no fue registrado correctamente\", function () {\n    pm.expect(respuesta._message).to.equal(\"User validation failed\");\n});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"QA\",\n  \"lastName\": \"Invalido\",\n  \"email\": 123456789,\n  \"password\": \"Pass-123456!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "CP-012: Intentar registrar usuario con email numérico y comprobar rechazo."
+          },
+          "response": []
+        }
+      ],
+      "description": "Peticiones organizadas por funcionalidad."
+    },
+    {
+      "name": "04 - Seguridad y usuarios",
+      "item": [
+        {
+          "name": "CP-013 - Token vacío",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', function () {\n    pm.response.to.have.status(401);\n});\npm.test('No se devuelve lista de contactos', function () {\n    pm.expect(pm.response.text()).not.to.include('firstName');\n});\npm.execution.setNextRequest(\"CP-014 - Token inválido\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer "
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "CP-013: Intentar consultar contactos con Authorization vacío y comprobar acceso denegado."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-014 - Token inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "\npm.test(\"CP-014 - La API rechaza el token inválido\", function () {\n    pm.response.to.have.status(401);\n});\n\npm.test(\"La solicitud no fue autorizada\", function () {\n    pm.expect(pm.response.code).not.to.equal(200);\n});\n\npm.test(\"No se produjo un error interno del servidor\", function () {\n    pm.expect(pm.response.code).to.be.below(500);\n});\n\npm.test(\"La respuesta informa sobre el rechazo\", function () {\n    const texto = pm.response.text();\n    pm.expect(texto.length).to.be.greaterThan(0);\n});\n\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{bearer_token_0mco}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "logout"
+              ]
+            },
+            "description": "CP-014: Intentar cerrar sesión con un token inválido; debe denegarse."
+          },
+          "response": []
+        },
+        {
+          "name": "PREP CP-015 - Consultar versión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "\npm.test(\"PREP CP-015 - Perfil consultado correctamente\", function () {\n    pm.response.to.have.status(200);\n});\n\nconst respuesta = pm.response.json();\n\npm.test(\"La respuesta es un objeto JSON\", function () {\n    pm.expect(respuesta).to.be.an(\"object\");\n});\n\npm.test(\"El perfil contiene el campo __v\", function () {\n    pm.expect(respuesta).to.have.property(\"__v\");\n});\n\npm.test(\"El campo __v es numérico\", function () {\n    pm.expect(respuesta.__v).to.be.a(\"number\");\n});\n\npm.environment.set(\"versionBefore\", respuesta.__v);\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Consulta perfil y guarda la versión interna __v antes de CP-015."
+          },
+          "response": []
+        },
+        {
+          "name": "CP-015 - Intentar modificar __v",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "\npm.test(\"CP-015 - La API rechaza modificar __v\", function () {\n    pm.expect([400, 403, 422]).to.include(pm.response.code);\n});\n\npm.test(\"La petición no produce un error interno\", function () {\n    pm.expect(pm.response.code).to.be.below(500);\n});\n\npm.test(\"La modificación no debe ser aceptada\", function () {\n    pm.expect(pm.response.code).not.to.equal(200);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"__v\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "CP-015: Intentar asignar 999 al campo interno __v; el resultado definitivo se comprueba en el GET posterior."
+          },
+          "response": []
+        },
+        {
+          "name": "VER CP-015 - Confirmar versión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "\npm.test(\"VER CP-015 - Perfil consultado correctamente\", function () {\n    pm.response.to.have.status(200);\n});\n\nconst respuesta = pm.response.json();\n\npm.test(\"La respuesta es un objeto JSON\", function () {\n    pm.expect(respuesta).to.be.an(\"object\");\n});\n\npm.test(\"El campo __v es numérico\", function () {\n    pm.expect(respuesta.__v).to.be.a(\"number\");\n});\n\nconst versionAnterior = Number(pm.environment.get(\"versionBefore\"));\n\npm.test(\"El campo __v no fue modificado\", function () {\n    pm.expect(respuesta.__v).to.equal(versionAnterior);\n});\n\npm.test(\"El campo __v no tiene el valor enviado\", function () {\n    pm.expect(respuesta.__v).not.to.equal(999);\n});\n\npm.environment.set(\"versionAfter\", respuesta.__v);\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Comprueba que el campo interno __v no fue establecido en 999. Si lo fue, el test falla."
+          },
+          "response": []
+        }
+      ],
+      "description": "Peticiones organizadas por funcionalidad."
+    },
+    {
+      "name": "05 - Consulta y limpieza",
+      "item": [
+        {
+          "name": "VER - Listar contactos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('La respuesta es un arreglo', function () { pm.expect(data).to.be.an('array'); });",
+                  "pm.execution.setNextRequest(\"LIMPIEZA - Eliminar contacto CP-010\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts"
+              ]
+            },
+            "description": "Comprueba que la lista de contactos se puede consultar con el token válido."
+          },
+          "response": []
+        },
+        {
+          "name": "LIMPIEZA - Eliminar contacto CP-010",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Contacto eliminado', function () { pm.expect([200, 204]).to.include(pm.response.code); });",
+                  "pm.execution.setNextRequest(\"FIN - Eliminar usuario temporal\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/{{contactId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contacts",
+                "{{contactId}}"
+              ]
+            },
+            "description": "Elimina un contacto de prueba y verifica el resultado de DELETE."
+          },
+          "response": []
+        },
+        {
+          "name": "FIN - Eliminar usuario temporal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Usuario eliminado', function () { pm.expect([200, 204]).to.include(pm.response.code); });",
+                  "pm.execution.setNextRequest(null);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Elimina usuario temporal y sus datos; termina la ejecución de la colección."
+          },
+          "response": []
+        }
+      ],
+      "description": "Peticiones organizadas por funcionalidad."
+    }
+  ],
+  "variable": [
+    {
+      "key": "bearer_token_0mco",
+      "secret": true
+    }
+  ]
+}
